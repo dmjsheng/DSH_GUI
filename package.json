@@ -1,0 +1,40 @@
+{
+  "name": "dsh-gui",
+  "version": "0.1.0",
+  "description": "Desktop wrapper for a local DeepSeek Harness installation.",
+  "author": "dmjsheng",
+  "type": "module",
+  "main": "src/main.js",
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "test": "node --test",
+    "start": "electron .",
+    "build": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.dmjsheng.dshgui",
+    "productName": "DSH GUI",
+    "directories": {
+      "output": "dist"
+    },
+    "artifactName": "DSH GUI V0.1.${ext}",
+    "files": [
+      "src/**/*",
+      "DSH-logo.png",
+      "DSH-logo.ico",
+      "package.json",
+      "README.md"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "DSH-logo.ico"
+    }
+  },
+  "devDependencies": {
+    "electron": "^38.4.0",
+    "electron-builder": "^26.0.12"
+  }
+}

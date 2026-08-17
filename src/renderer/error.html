@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSH GUI 启动失败</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel error-panel">
+        <img class="logo" src="../../DSH-logo.png" alt="DSH">
+        <div>
+          <h1>DeepSeek Harness 没有启动</h1>
+          <p id="message"></p>
+        </div>
+        <dl class="details">
+          <div>
+            <dt>Harness 目录</dt>
+            <dd id="harnessRoot"></dd>
+          </div>
+          <div>
+            <dt>日志目录</dt>
+            <dd id="logsDir"></dd>
+          </div>
+        </dl>
+      </section>
+    </main>
+    <script>
+      const params = new URLSearchParams(location.search)
+      document.querySelector('#message').textContent = params.get('message') || '未知错误'
+      document.querySelector('#harnessRoot').textContent = params.get('harnessRoot') || ''
+      document.querySelector('#logsDir').textContent = params.get('logsDir') || ''
+    </script>
+  </body>
+</html>
