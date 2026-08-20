@@ -8,13 +8,17 @@ const execFileAsync = promisify(execFile)
 const DEFAULT_HARNESS_ROOT = 'D:\\DSH'
 const DEFAULT_HOST = '127.0.0.1'
 const DEFAULT_PORT = 3080
+const WINDOWS_NODE_CANDIDATES = [
+  'D:\\Nodejs\\node.exe',
+  'C:\\Program Files\\nodejs\\node.exe',
+]
 
 export function resolveHarnessConfig(env = process.env) {
   const harnessRoot = env.DSH_GUI_HARNESS_ROOT || DEFAULT_HARNESS_ROOT
   const harnessHome = env.DSH_GUI_HARNESS_HOME || path.join(harnessRoot, '.dsh')
   const host = env.DSH_GUI_HOST || DEFAULT_HOST
   const port = parsePort(env.DSH_GUI_PORT)
-  const pnpmCommand = env.DSH_GUI_PNPM || (process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm')
+  const nodeCommand = env.DSH_GUI_NODE || resolveDefaultNodeCommand()
 
   return {
     harnessRoot,
@@ -22,7 +26,7 @@ export function resolveHarnessConfig(env = process.env) {
     host,
     port,
     url: `http://${host}:${port}`,
-    pnpmCommand,
+    nodeCommand,
     logsDir: path.join(harnessHome, 'logs'),
   }
 }
@@ -91,6 +95,53 @@ export function createHarnessController(deps = {}) {
   }
 }
 
+function spawnHarnessProcess(config) {
+  const out = createWriteStream(path.join(config.logsDir, 'gui-web.out.log'), { flags: 'a' })
+  const err = createWriteStream(path.join(config.logsDir, 'gui-web.err.log'), { flags: 'a' })
+  const spec = buildHarnessProcessSpec(config)
+  const child = spawn(spec.command, spec.args, spec.options)
+
+  child.stdout?.pipe(out)
+  child.stderr?.pipe(err)
+
+  return child
+}
+
+export function buildHarnessProcessSpec(config) {
+  return {
+    command: config.nodeCommand,
+    args: [
+      '--import',
+      'tsx/esm',
+      'apps/cli/src/bin.ts',
+      'web',
+      '--host',
+      config.host,
+      '--port',
+      String(config.port),
+    ],
+    options: {
+      cwd: config.harnessRoot,
+      env: {
+        ...process.env,
+        DSH_HOME: config.harnessHome,
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
+    },
+  }
+}
+
+function resolveDefaultNodeCommand() {
+  if (process.platform === 'win32') {
+    const candidate = WINDOWS_NODE_CANDIDATES.find((nodePath) => existsSync(nodePath))
+    if (candidate !== undefined) return candidate
+    return 'node.exe'
+  }
+
+  return 'node'
+}
+
 function parsePort(value) {
   if (value === undefined || value === '') return DEFAULT_PORT
 
@@ -100,25 +151,6 @@ function parsePort(value) {
   }
 
   return port
-}
-
-function spawnHarnessProcess(config) {
-  const out = createWriteStream(path.join(config.logsDir, 'gui-web.out.log'), { flags: 'a' })
-  const err = createWriteStream(path.join(config.logsDir, 'gui-web.err.log'), { flags: 'a' })
-  const child = spawn(config.pnpmCommand, ['dsh', 'web', '--host', config.host, '--port', String(config.port)], {
-    cwd: config.harnessRoot,
-    env: {
-      ...process.env,
-      DSH_HOME: config.harnessHome,
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
-    windowsHide: true,
-  })
-
-  child.stdout?.pipe(out)
-  child.stderr?.pipe(err)
-
-  return child
 }
 
 async function waitForChildStartup(child, config, wait) {

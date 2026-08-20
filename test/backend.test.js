@@ -3,6 +3,7 @@ import http from 'node:http'
 import test from 'node:test'
 
 import {
+  buildHarnessProcessSpec,
   createHarnessController,
   resolveHarnessConfig,
   waitForReady,
@@ -16,7 +17,34 @@ test('resolveHarnessConfig uses D drive defaults', () => {
   assert.equal(config.host, '127.0.0.1')
   assert.equal(config.port, 3080)
   assert.equal(config.url, 'http://127.0.0.1:3080')
-  assert.equal(config.pnpmCommand, 'pnpm.cmd')
+  assert.equal(config.nodeCommand, 'D:\\Nodejs\\node.exe')
+})
+
+test('buildHarnessProcessSpec starts Harness with node directly', () => {
+  const spec = buildHarnessProcessSpec({
+    harnessRoot: 'D:\\DSH',
+    harnessHome: 'D:\\DSH\\.dsh',
+    host: '127.0.0.1',
+    port: 3080,
+    url: 'http://127.0.0.1:3080',
+    nodeCommand: 'D:\\Nodejs\\node.exe',
+    logsDir: 'D:\\DSH\\.dsh\\logs',
+  })
+
+  assert.equal(spec.command, 'D:\\Nodejs\\node.exe')
+  assert.deepEqual(spec.args, [
+    '--import',
+    'tsx/esm',
+    'apps/cli/src/bin.ts',
+    'web',
+    '--host',
+    '127.0.0.1',
+    '--port',
+    '3080',
+  ])
+  assert.equal(spec.options.cwd, 'D:\\DSH')
+  assert.equal(spec.options.env.DSH_HOME, 'D:\\DSH\\.dsh')
+  assert.equal(spec.options.windowsHide, true)
 })
 
 test('resolveHarnessConfig accepts environment overrides', () => {
@@ -24,7 +52,7 @@ test('resolveHarnessConfig accepts environment overrides', () => {
     DSH_GUI_HARNESS_ROOT: 'E:\\Tools\\DSH',
     DSH_GUI_HOST: 'localhost',
     DSH_GUI_PORT: '4090',
-    DSH_GUI_PNPM: 'C:\\Tools\\pnpm.cmd',
+    DSH_GUI_NODE: 'C:\\Tools\\node.exe',
   })
 
   assert.equal(config.harnessRoot, 'E:\\Tools\\DSH')
@@ -32,7 +60,7 @@ test('resolveHarnessConfig accepts environment overrides', () => {
   assert.equal(config.host, 'localhost')
   assert.equal(config.port, 4090)
   assert.equal(config.url, 'http://localhost:4090')
-  assert.equal(config.pnpmCommand, 'C:\\Tools\\pnpm.cmd')
+  assert.equal(config.nodeCommand, 'C:\\Tools\\node.exe')
 })
 
 test('waitForReady resolves after the endpoint starts responding', async () => {

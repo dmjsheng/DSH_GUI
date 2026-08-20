@@ -31,4 +31,4 @@ The packaged Windows app is written to `dist/`.
 - `DSH_GUI_HARNESS_HOME`: Harness data path, default `D:\DSH\.dsh`
 - `DSH_GUI_HOST`: bind host, default `127.0.0.1`
 - `DSH_GUI_PORT`: bind port, default `3080`
-- `DSH_GUI_PNPM`: pnpm command, default `pnpm.cmd` on Windows
+- `DSH_GUI_NODE`: Node.js command, default `D:\Nodejs\node.exe` when present on Windows
