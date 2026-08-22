@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 function Get-EnvOrDefault {
     param(
         [Parameter(Mandatory = $true)][string]$Name,
-        [Parameter(Mandatory = $true)][string]$DefaultValue
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$DefaultValue
     )
 
     $value = [Environment]::GetEnvironmentVariable($Name, 'Process')
