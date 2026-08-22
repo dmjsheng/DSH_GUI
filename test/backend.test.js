@@ -92,7 +92,7 @@ test('controller reuses an existing responding endpoint without spawning or kill
       host: '127.0.0.1',
       port: 3080,
       url: 'http://127.0.0.1:3080',
-      pnpmCommand: 'pnpm.cmd',
+      nodeCommand: 'D:\\Nodejs\\node.exe',
     },
     probe: async () => true,
     spawnProcess: () => {

@@ -1,6 +1,6 @@
 {
   "name": "dsh-gui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Desktop wrapper for a local DeepSeek Harness installation.",
   "author": "dmjsheng",
   "type": "module",
@@ -18,7 +18,7 @@
     "directories": {
       "output": "dist"
     },
-    "artifactName": "DSH GUI V0.1.${ext}",
+    "artifactName": "DSH GUI V0.2.${ext}",
     "files": [
       "src/**/*",
       "DSH-logo.png",
