@@ -6,18 +6,65 @@
     <title>DSH GUI</title>
     <link rel="stylesheet" href="./styles.css">
   </head>
-  <body>
+  <body data-phase="checking">
     <main class="shell">
-      <section class="panel">
-        <img class="logo" src="../../DSH-logo.png" alt="DSH">
-        <div>
-          <h1>正在启动 DeepSeek Harness</h1>
-          <p>连接本机服务 http://127.0.0.1:3080</p>
+      <section class="panel startup-panel">
+        <header class="brand-row">
+          <img class="logo" src="../../DSH-logo.png" alt="DSH">
+          <div>
+            <p class="eyebrow">DSH GUI V0.3</p>
+            <h1 id="title">正在准备 DeepSeek Harness</h1>
+          </div>
+        </header>
+
+        <p id="message" class="message">正在读取运行状态。</p>
+
+        <ol class="steps" aria-label="启动进度">
+          <li data-step="checking"><span>1</span>检查环境</li>
+          <li data-step="starting"><span>2</span>启动服务</li>
+          <li data-step="ready"><span>3</span>加载工作区</li>
+        </ol>
+
+        <dl class="status-grid">
+          <div><dt>阶段</dt><dd id="phase">检查运行环境</dd></div>
+          <div><dt>DSH 目录</dt><dd id="harnessRoot"></dd></div>
+          <div><dt>版本</dt><dd id="version">0.3</dd></div>
+          <div><dt>访问地址</dt><dd id="endpoint"></dd></div>
+          <div><dt>服务归属</dt><dd id="ownership"></dd></div>
+        </dl>
+
+        <div id="lanNotice" class="notice" hidden>
+          <strong>局域网访问已开启</strong>
+          <p id="lanMessage"></p>
+          <ul id="lanUrls"></ul>
         </div>
-        <div class="progress" aria-hidden="true">
-          <span></span>
+
+        <div class="actions">
+          <button id="retry" type="button" hidden>重试</button>
+          <button id="restart" type="button" hidden>重启后端</button>
+          <button id="openLogs" type="button">打开日志</button>
+          <button id="copyDiagnostics" type="button">复制诊断</button>
+          <button id="settingsToggle" type="button" class="secondary">设置</button>
         </div>
+
+        <section id="settings" class="settings" hidden>
+          <div class="section-heading">
+            <h2>启动设置</h2>
+            <span>修改后点击重试</span>
+          </div>
+          <label>Harness 目录<input id="harnessRootInput" type="text" spellcheck="false"></label>
+          <label>用户数据目录<input id="harnessHomeInput" type="text" spellcheck="false"></label>
+          <label>Node 路径<input id="nodeCommandInput" type="text" spellcheck="false"></label>
+          <label>端口<input id="portInput" type="number" min="1" max="65535"></label>
+          <label class="check-row"><input id="lanAccessInput" type="checkbox">允许局域网访问</label>
+          <label class="check-row"><input id="autoStartInput" type="checkbox">允许随 GUI 启动后端</label>
+          <div class="settings-actions">
+            <button id="saveSettings" type="button">保存设置</button>
+            <span id="saveMessage" role="status"></span>
+          </div>
+        </section>
       </section>
     </main>
+    <script src="./startup.js"></script>
   </body>
 </html>

@@ -39,11 +39,62 @@ function Resolve-NodeCommand {
     }
 }
 
-$harnessRoot = Get-EnvOrDefault -Name 'DSH_GUI_HARNESS_ROOT' -DefaultValue 'D:\DSH'
-$harnessHome = Get-EnvOrDefault -Name 'DSH_GUI_HARNESS_HOME' -DefaultValue (Join-Path $harnessRoot '.dsh')
-$hostName = Get-EnvOrDefault -Name 'DSH_GUI_HOST' -DefaultValue '127.0.0.1'
-$portText = Get-EnvOrDefault -Name 'DSH_GUI_PORT' -DefaultValue '3080'
-$node = Resolve-NodeCommand
+function ConvertTo-Boolean {
+    param([object]$Value)
+
+    return $Value -eq $true -or @('1', 'true', 'yes', 'on') -contains ([string]$Value).ToLowerInvariant()
+}
+
+function Get-Setting {
+    param(
+        [Parameter(Mandatory = $true)][string]$EnvironmentName,
+        [Parameter(Mandatory = $true)][string]$ConfigName,
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$DefaultValue
+    )
+
+    $environmentValue = Get-EnvOrDefault -Name $EnvironmentName -DefaultValue ''
+    if (-not [string]::IsNullOrWhiteSpace($environmentValue)) {
+        return $environmentValue
+    }
+
+    if ($null -ne $script:guiConfig) {
+        $property = $script:guiConfig.PSObject.Properties[$ConfigName]
+        if ($null -ne $property -and $null -ne $property.Value -and -not [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+            return [string]$property.Value
+        }
+    }
+
+    return $DefaultValue
+}
+
+$script:guiConfig = $null
+$configCandidates = @()
+if (-not [string]::IsNullOrWhiteSpace($env:APPDATA)) {
+    $configCandidates += Join-Path $env:APPDATA 'dsh-gui\config.json'
+    $configCandidates += Join-Path $env:APPDATA 'DSH GUI\config.json'
+}
+
+foreach ($configPath in $configCandidates) {
+    if (-not (Test-Path -LiteralPath $configPath)) {
+        continue
+    }
+
+    try {
+        $script:guiConfig = Get-Content -Raw -Encoding UTF8 -LiteralPath $configPath | ConvertFrom-Json
+        break
+    } catch {
+        $script:guiConfig = $null
+    }
+}
+
+$harnessRoot = Get-Setting -EnvironmentName 'DSH_GUI_HARNESS_ROOT' -ConfigName 'harnessRoot' -DefaultValue 'D:\DSH'
+$harnessHome = Get-Setting -EnvironmentName 'DSH_GUI_HARNESS_HOME' -ConfigName 'harnessHome' -DefaultValue (Join-Path $harnessRoot '.dsh')
+$hostName = Get-Setting -EnvironmentName 'DSH_GUI_HOST' -ConfigName 'host' -DefaultValue '127.0.0.1'
+$portText = Get-Setting -EnvironmentName 'DSH_GUI_PORT' -ConfigName 'port' -DefaultValue '3080'
+$lanAccess = ConvertTo-Boolean (Get-Setting -EnvironmentName 'DSH_GUI_LAN_ACCESS' -ConfigName 'lanAccess' -DefaultValue 'false')
+$bindHost = if ($lanAccess) { '0.0.0.0' } else { $hostName }
+$configuredNode = Get-Setting -EnvironmentName 'DSH_GUI_NODE' -ConfigName 'nodeCommand' -DefaultValue ''
+$node = if ([string]::IsNullOrWhiteSpace($configuredNode)) { Resolve-NodeCommand } else { $configuredNode }
 
 $port = 0
 if (-not [int]::TryParse($portText, [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
@@ -56,8 +107,12 @@ if (-not (Test-Path -LiteralPath $harnessRoot)) {
 
 $listener = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
     Where-Object {
-        $_.LocalAddress -eq $hostName -or
-        ($hostName -eq '127.0.0.1' -and $_.LocalAddress -in @('127.0.0.1', '0.0.0.0', '::'))
+        if ($lanAccess) {
+            $_.LocalAddress -in @('0.0.0.0', '::')
+        } else {
+            $_.LocalAddress -eq $hostName -or
+            ($hostName -eq '127.0.0.1' -and $_.LocalAddress -in @('127.0.0.1', '0.0.0.0', '::'))
+        }
     } |
     Select-Object -First 1
 
@@ -78,7 +133,8 @@ $args = @(
     '--import', 'tsx/esm',
     'apps/cli/src/bin.ts',
     'web',
-    '--host', $hostName,
+    '--no-open',
+    '--host', $bindHost,
     '--port', "$port"
 )
 
